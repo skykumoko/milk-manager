@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 牛奶管家</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 标题 -->
+        <div class="title-box">
+            <span class="deco">🌸</span>
+            <h1>牛奶库存管理</h1>
+            <span class="deco">🌸</span>
+        </div>
+
+        <!-- 操作区 -->
+        <div class="control-section">
+            <!-- 补货 -->
+            <div class="btn-group">
+                <span class="group-label">➕ 补货</span>
+                <button @click="addPack(12)" class="action-btn add-btn">🛒 12包</button>
+                <button @click="addPack(16)" class="action-btn add-btn">🚚 16包</button>
+            </div>
+
+            <!-- 消耗 -->
+            <div class="btn-group">
+                <span class="group-label">➖ 消耗</span>
+                <button @click="drinkMilk(1)" class="action-btn remove-btn">🥤 1包</button>
+                <button @click="drinkMilk(2)" class="action-btn remove-btn">🥤🥤 2包</button>
+            </div>
+
+            <!-- 撤销 -->
+            <button @click="undo" class="undo-btn" :disabled="!canUndo">⏪ 撤销</button>
+        </div>
+
+        <!-- 统计 -->
+        <div class="stats">
+            <div class="milk-count">
+                🥛 当前余量：{{ milkArray.length }}包
+                <span v-if="milkArray.length <= 3" class="warning">（该补货了！）</span>
+            </div>
+        </div>
+
+        <!-- 牛奶图标 -->
+        <div class="milk-visual">
+            <transition-group name="milk">
+                <div v-for="(milk, index) in milkArray" :key="index" class="milk-item">🥛</div>
+            </transition-group>
+        </div>
+
+        <!-- 操作记录 -->
+        <div class="history">
+            <div class="history-title">📋 操作记录（最近5条）</div>
+            <div v-if="history.length === 0" class="empty">~ 暂无记录 ~</div>
+            <div v-for="(record, index) in limitedHistory" :key="index" class="record-item" :class="record.type">
+                <span v-if="record.type === 'add'">🛒</span>
+                <span v-else>🥤</span>
+                {{ record.time }} 
+                <span :class="record.type + '-text'">
+                    {{ record.type === 'add' ? '补货' : '喝掉' }} {{ record.amount }} 包
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
