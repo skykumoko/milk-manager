@@ -185,3 +185,22 @@ body {
         font-size: 14px;
     }
 }
+
+/* 错误提示 */
+.error {
+    padding: 20px;
+    background: #FFEBEE;
+    border: 2px solid #FF5252;
+    border-radius: 10px;
+    color: #D32F2F;
+    text-align: center;
+    margin: 20px;
+}
+
+/* 时间戳样式 */
+.timestamp {
+    color: #666;
+    font-size: 0.9em;
+    margin: 0 10px;
+}
+
