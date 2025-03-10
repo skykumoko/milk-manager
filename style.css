@@ -167,10 +167,27 @@ body {
     margin-left: 10px;
 }
 
-.warning { color: #ff4444; }
+.warning {
+    color: #FF4500;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
 .milk-item { display: inline-block; margin: 5px; }
 .record-item { padding: 5px; margin: 3px; }
 .add-text { color: #4CAF50; }
 .drink-text { color: #2196F3; }
 .undo-btn:disabled { opacity: 0.5; }
 
+/* 增加移动端适配 */
+@media (max-width: 600px) {
+    .control-section {
+        padding: 10px;
+        margin: 10px;
+    }
+    
+    .action-btn {
+        padding: 8px 15px !important;
+        font-size: 14px;
+    }
+}
