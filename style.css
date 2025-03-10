@@ -167,12 +167,6 @@ body {
     margin-left: 10px;
 }
 
-.warning {
-    color: #FF4500;
-    font-weight: bold;
-    margin-left: 10px;
-}
-
 .milk-item { display: inline-block; margin: 5px; }
 .record-item { padding: 5px; margin: 3px; }
 .add-text { color: #4CAF50; }
