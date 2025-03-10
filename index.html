@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
+    <div id="milkManager">
         <!-- 标题 -->
         <div class="title-box">
             <span class="deco">🌸</span>
@@ -37,25 +37,18 @@
 
         <!-- 统计 -->
         <div class="stats">
-            <div class="milk-count">
-                <span id="milkCount">🥛 当前余量：3包</span>
+            <div class="milk-count" id="milkCounter"> 
+                🥛 当前余量：3包
             </div>
         </div>
 
         <!-- 牛奶图标 -->
-        <div class="milk-visual" id="milkVisual">
-            <div class="milk-item">🥛</div>
-            <div class="milk-item">🥛</div>
-            <div class="milk-item">🥛</div>
-        </div>
+        <div class="milk-visual" id="milkDisplay"></div>
 
         <!-- 操作记录 -->
-        <div class="history" id="history">
-            <div class="history-title">📋 操作记录（最近5条）</div>
-            <div class="empty">~ 暂无记录 ~</div>
-        </div>
+        <div class="history" id="historyLog"></div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
