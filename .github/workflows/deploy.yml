@@ -1,29 +1,76 @@
-name: Secure Deploy
+name: 自动部署牛奶管家
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]  # 如果你的主分支是master请修改
+  workflow_dispatch:      # 允许手动触发
 
+# 必须声明权限才能操作Gist
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: write        # 用于部署GitHub Pages
+  gists: write           # 用于修改Gist数据
+  id-token: write        # 启用OIDC安全认证
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 5   # 防止卡死
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    # ======================
+    # 基础环境配置
+    # ======================
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0   # 获取完整提交历史
 
-      - name: 注入Token
-        run: |
-          # 确认script.js路径（如果放在js目录要改成js/script.js）
-          sed -i "s|window.__GIST_TOKEN__ = ''|window.__GIST_TOKEN__ = '${{ secrets.GIST_TOKEN }}'|g" script.js
+    # ======================
+    # Node.js环境配置 (可选)
+    # ======================
+    - name: 配置Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'      # 缓存node_modules
 
-      - name: 部署到GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          keep_files: true  # 保留所有文件
+    # ======================
+    # 安全注入Token
+    # ======================
+    - name: 注入Gist凭据
+      env:
+        GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+      run: |
+        # 显示注入前的文件内容 (调试用)
+        echo "注入前的script.js:"
+        head -n 20 script.js
+
+        # 使用精确替换保证变量名匹配
+        sed -i "s|window.__GIST_TOKEN__ = ''|window.__GIST_TOKEN__ = '$GIST_TOKEN'|g" script.js
+
+        # 验证替换结果
+        echo "注入后的script.js:"
+        grep '__GIST_TOKEN__' script.js
+
+    # ======================
+    # 部署到GitHub Pages
+    # ======================
+    - name: 部署页面
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./          # 部署整个仓库
+        keep_files: false        # 清理旧文件
+        force_orphan: true       # 保持gh-pages单次提交
+        user_name: "GitHub Actions"
+        user_email: "actions@users.noreply.github.com"
+
+    # ======================
+    # 健康检查 (可选)
+    # ======================
+    - name: 验证部署结果
+      run: |
+        echo "等待页面生成..."
+        sleep 60  # 等待CDN刷新
+        curl -sSL -o /dev/null -w "%{http_code}" \
+          "https://${{ github.repository_owner }}.github.io/${{ github.repository }}" | grep 200
