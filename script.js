@@ -1,89 +1,84 @@
-// 简单易用的牛奶管理系统
+// 牛奶管家完整功能版 (含数据持久化)
 const MilkManager = {
     data: {
-        milk: ['🥛', '🥛', '🥛'], // 初始3瓶
-        history: []
+        milk: Array(3).fill('🥛'), // 初始3包
+        history: [],
+        lastUpdate: Date.now()
     },
 
+    // 初始化系统
     init() {
-        this.render();
-        this.bindEvents();
-        console.log('系统已启动 🚀');
+        this.loadData();
+        this.setupEventListeners();
+        this.updateUI();
+        this.checkStorage();
+        console.log('🥛 牛奶管家已启动');
     },
 
-    render() {
-        // 更新牛奶显示
-        document.querySelector('.milk-count').innerHTML = 
-            `🥛 当前余量：${this.data.milk.length}包 
-             ${this.data.milk.length <= 3 ? '<span class="warning">（该补货了！）</span>' : ''}`;
-
-        // 更新图标
-        const milkArea = document.querySelector('.milk-visual');
-        milkArea.innerHTML = this.data.milk.map(() => '<div class="milk-item">🥛</div>').join('');
-
-        // 更新历史记录
-        const historyArea = document.querySelector('.history');
-        historyArea.innerHTML = `
-            <div class="history-title">📋 操作记录（最近5条）</div>
-            ${this.data.history.slice(-5).map(record => `
-                <div class="record-item ${record.type}">
-                    ${record.type === 'add' ? '🛒' : '🥤'}
-                    ${new Date(record.time).toLocaleString()} 
-                    <span class="${record.type}-text">
-                        ${record.type === 'add' ? '补货' : '喝掉'} ${record.amount} 包
-                    </span>
-                </div>
-            `).join('') || '<div class="empty">~ 暂无记录 ~</div>'}
-        `;
+    // 加载本地数据
+    loadData() {
+        const savedData = localStorage.getItem('milkData');
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                this.data = {
+                    ...this.data,
+                    ...parsed,
+                    milk: parsed.milk || this.data.milk
+                };
+            } catch(e) {
+                console.error('数据加载失败，使用默认值:', e);
+            }
+        }
     },
 
-    bindEvents() {
+    // 保存数据到本地
+    saveData() {
+        localStorage.setItem('milkData', JSON.stringify({
+            milk: this.data.milk,
+            history: this.data.history.slice(-50), // 最多保留50条记录
+            lastUpdate: Date.now()
+        }));
+    },
+
+    // 事件监听设置
+    setupEventListeners() {
         // 补货按钮
         document.querySelectorAll('.add-btn').forEach(btn => {
-            btn.onclick = () => this.addPack(parseInt(btn.textContent.match(/\d+/)[0]));
+            btn.addEventListener('click', () => {
+                const amount = parseInt(btn.dataset.amount);
+                this.handleAdd(amount);
+            });
         });
 
         // 消耗按钮
         document.querySelectorAll('.remove-btn').forEach(btn => {
-            btn.onclick = () => this.drinkMilk(parseInt(btn.textContent.match(/\d+/)[0]));
+            btn.addEventListener('click', () => {
+                const amount = parseInt(btn.dataset.amount);
+                this.handleDrink(amount);
+            });
         });
 
         // 撤销按钮
-        document.querySelector('.undo-btn').onclick = () => this.undo();
+        document.getElementById('undoBtn').addEventListener('click', () => this.undoAction());
     },
 
-    addPack(amount) {
+    // 处理补货
+    handleAdd(amount) {
         this.data.milk.push(...Array(amount).fill('🥛'));
-        this.recordAction('add', amount);
-        this.render();
+        this.recordHistory('add', amount);
+        this.updateSystem();
     },
 
-    drinkMilk(amount) {
-        this.data.milk.splice(0, amount);
-        this.recordAction('drink', amount);
-        this.render();
-    },
-
-    undo() {
-        if (this.data.history.length > 0) {
-            const lastAction = this.data.history.pop();
-            if (lastAction.type === 'add') {
-                this.data.milk.splice(-lastAction.amount);
-            } else {
-                this.data.milk.unshift(...Array(lastAction.amount).fill('🥛'));
-            }
-            this.render();
+    // 处理消耗
+    handleDrink(amount) {
+        if (amount > this.data.milk.length) {
+            alert('库存不足！');
+            return;
         }
+        this.data.milk.splice(0, amount);
+        this.recordHistory('drink', amount);
+        this.updateSystem();
     },
 
-    recordAction(type, amount) {
-        this.data.history.push({
-            type,
-            amount,
-            time: Date.now()
-        });
-    }
-};
-
-// 启动系统
-window.onload = () => MilkManager.init();
+    // 
