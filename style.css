@@ -204,3 +204,28 @@ body {
     margin: 0 10px;
 }
 
+/* 添加至style.css末尾 */
+#milkManager {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.error-box {
+    padding: 2rem;
+    background: #ffe6e6;
+    border: 2px solid #ff4444;
+    border-radius: 10px;
+    text-align: center;
+    color: #cc0000;
+}
+
+.error-box button {
+    margin-top: 1rem;
+    padding: 8px 20px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
