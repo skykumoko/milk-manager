@@ -1,4 +1,8 @@
 const { createApp } = Vue;
+const GIST_ID = '90fd281aaa471cf61066ddfd2bc97d4e';
+
+// 安全访问全局变量（与Actions注入的名称一致）
+const GIST_TOKEN = window.__GIST_TOKEN__ || '';
 
 createApp({
     data() {
