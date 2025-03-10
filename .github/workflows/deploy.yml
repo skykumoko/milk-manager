@@ -1,35 +1,45 @@
-name: 自动部署牛奶管家
+name: Auto Deploy Milk Manager
 
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
 
-# ✅ 修正后的权限配置
 permissions:
   contents: write
-  gist: write  # 这是正确的权限名称
+  pages: write
   id-token: write
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-    - name: 检出代码
+    - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: 注入Gist凭据
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+
+    - name: Inject Gist Token
       env:
         GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
       run: |
-        sed -i "s|window.__GIST_TOKEN__ = ''|window.__GIST_TOKEN__ = '$GIST_TOKEN'|g" script.js
+        if [ -f "script.js" ]; then
+          sed -i "s|window.__GIST_TOKEN__ = ''|window.__GIST_TOKEN__ = '$GIST_TOKEN'|g" script.js
+        else
+          echo "##[error] script.js 文件不存在"
+          exit 1
+        fi
 
-    - name: 部署页面
+    - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./
+        keep_files: true
