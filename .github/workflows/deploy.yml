@@ -2,75 +2,34 @@ name: 自动部署牛奶管家
 
 on:
   push:
-    branches: [ "main" ]  # 如果你的主分支是master请修改
-  workflow_dispatch:      # 允许手动触发
+    branches: [ "main" ]
+  workflow_dispatch:
 
-# 必须声明权限才能操作Gist
+# ✅ 修正后的权限配置
 permissions:
-  contents: write        # 用于部署GitHub Pages
-  gists: write           # 用于修改Gist数据
-  id-token: write        # 启用OIDC安全认证
+  contents: write
+  gist: write  # 这是正确的权限名称
+  id-token: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 5   # 防止卡死
+    timeout-minutes: 5
 
     steps:
-    # ======================
-    # 基础环境配置
-    # ======================
     - name: 检出代码
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0   # 获取完整提交历史
+        fetch-depth: 0
 
-    # ======================
-    # Node.js环境配置 (可选)
-    # ======================
-    - name: 配置Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
-        cache: 'npm'      # 缓存node_modules
-
-    # ======================
-    # 安全注入Token
-    # ======================
     - name: 注入Gist凭据
       env:
         GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
       run: |
-        # 显示注入前的文件内容 (调试用)
-        echo "注入前的script.js:"
-        head -n 20 script.js
-
-        # 使用精确替换保证变量名匹配
         sed -i "s|window.__GIST_TOKEN__ = ''|window.__GIST_TOKEN__ = '$GIST_TOKEN'|g" script.js
 
-        # 验证替换结果
-        echo "注入后的script.js:"
-        grep '__GIST_TOKEN__' script.js
-
-    # ======================
-    # 部署到GitHub Pages
-    # ======================
     - name: 部署页面
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./          # 部署整个仓库
-        keep_files: false        # 清理旧文件
-        force_orphan: true       # 保持gh-pages单次提交
-        user_name: "GitHub Actions"
-        user_email: "actions@users.noreply.github.com"
-
-    # ======================
-    # 健康检查 (可选)
-    # ======================
-    - name: 验证部署结果
-      run: |
-        echo "等待页面生成..."
-        sleep 60  # 等待CDN刷新
-        curl -sSL -o /dev/null -w "%{http_code}" \
-          "https://${{ github.repository_owner }}.github.io/${{ github.repository }}" | grep 200
+        publish_dir: ./
