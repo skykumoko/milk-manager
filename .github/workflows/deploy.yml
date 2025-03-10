@@ -1,8 +1,13 @@
-name: Deploy with Token
+name: Secure Deploy
 
 on:
   push:
     branches: [ "main" ]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   deploy:
@@ -11,12 +16,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Inject Token
+      - name: 注入Token
         run: |
+          # 确认script.js路径（如果放在js目录要改成js/script.js）
           sed -i "s|window.GIST_TOKEN = ''|window.GIST_TOKEN = '${{ secrets.GIST_TOKEN }}'|g" script.js
 
-      - name: Deploy
+      - name: 部署到GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
+          keep_files: true  # 保留所有文件
