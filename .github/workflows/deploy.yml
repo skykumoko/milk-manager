@@ -19,7 +19,7 @@ jobs:
       - name: 注入Token
         run: |
           # 确认script.js路径（如果放在js目录要改成js/script.js）
-          sed -i "s|window.GIST_TOKEN = ''|window.GIST_TOKEN = '${{ secrets.GIST_TOKEN }}'|g" script.js
+          sed -i "s|window.__GIST_TOKEN__ = ''|window.__GIST_TOKEN__ = '${{ secrets.GIST_TOKEN }}'|g" script.js
 
       - name: 部署到GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
