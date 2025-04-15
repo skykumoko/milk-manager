@@ -138,10 +138,11 @@ const MilkManager = (() => {
             '<div class="milk-item">🥛</div>'
         ).join('');
 
-        // 更新历史记录
+        // 更新历史记录（修改了这部分）
+        const recentHistory = state.history.slice(-5).reverse(); // 添加.reverse()反转数组
         dom.history.innerHTML = `
             <div class="history-title">📋 操作记录（最近5条）</div>
-            ${state.history.slice(-5).map(record => `
+            ${recentHistory.map(record => `
                 <div class="record-item ${record.type}">
                     ${record.type === 'add' ? '🛒' : '🥤'}
                     <span class="timestamp">${record.time}</span>
