@@ -4,57 +4,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🌸 牛奶管家</title>
+    <style>
+        /* 基础样式确保元素可见 */
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .milk-item {
+            display: inline-block;
+            margin: 5px;
+            font-size: 24px;
+        }
+        .sync-status {
+            height: 20px;
+            margin: 10px 0;
+            text-align: center;
+            color: #666;
+        }
+        .warning {
+            color: #f44336;
+            font-size: 0.8em;
+        }
+    </style>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="milkManager">
-        <!-- 标题 -->
-        <div class="title-box">
+        <!-- 标题区 -->
+        <header class="title-box">
             <span class="deco">🌸</span>
             <h1>牛奶库存管理</h1>
             <span class="deco">🌸</span>
-        </div>
+        </header>
 
-        <!-- 操作区 -->
-        <div class="control-section">
-            <!-- 补货 -->
-            <div class="btn-group">
-                <span class="group-label">➕ 补货</span>
-                <button class="action-btn add-btn" data-amount="12">🛒 12包</button>
-                <button class="action-btn add-btn" data-amount="16">🚚 16包</button>
-            </div>
+        <!-- 主操作区 -->
+        <main>
+            <!-- 补货操作 -->
+            <section class="control-section">
+                <div class="btn-group">
+                    <span class="group-label">➕ 补货</span>
+                    <div class="btn-row">
+                        <button class="action-btn add-btn" 
+                                data-amount="12"
+                                aria-label="补货12包">
+                            🛒 12包
+                        </button>
+                        <button class="action-btn add-btn" 
+                                data-amount="16"
+                                aria-label="补货16包">
+                            🚚 16包
+                        </button>
+                    </div>
+                </div>
 
-            <!-- 消耗 -->
-            <div class="btn-group">
-                <span class="group-label">➖ 消耗</span>
-                <button class="action-btn remove-btn" data-amount="1">🥛 1包</button>
-                <button class="action-btn remove-btn" data-amount="2">🥛 2包</button>
-            </div>
-        </div>
+                <!-- 消耗操作 -->
+                <div class="btn-group">
+                    <span class="group-label">➖ 消耗</span>
+                    <div class="btn-row">
+                        <button class="action-btn remove-btn" 
+                                data-amount="1"
+                                aria-label="消耗1包">
+                            🥛 1包
+                        </button>
+                        <button class="action-btn remove-btn" 
+                                data-amount="2"
+                                aria-label="消耗2包">
+                            🥛 2包
+                        </button>
+                    </div>
+                </div>
+            </section>
 
-        <!-- 统计 -->
-        <div class="stats">
-            <div class="milk-count" id="milkCounter">🥛 当前余量：3包</div>
-        </div>
+            <!-- 数据展示区 -->
+            <section class="data-section">
+                <div class="stats">
+                    <div class="milk-count" id="milkCounter">🥛 当前余量：3包</div>
+                </div>
 
-        <!-- 牛奶图标 -->
-        <div class="milk-visual" id="milkDisplay">
-            <div class="milk-item">🥛</div>
-            <div class="milk-item">🥛</div>
-            <div class="milk-item">🥛</div>
-        </div>
+                <div class="milk-visual" id="milkDisplay" aria-live="polite">
+                    <div class="milk-item">🥛</div>
+                    <div class="milk-item">🥛</div>
+                    <div class="milk-item">🥛</div>
+                </div>
 
-        <!-- 操作记录 -->
-        <div class="history" id="historyLog"></div>
+                <div class="history" id="historyLog" aria-live="polite"></div>
+            </section>
+        </main>
 
         <!-- 底部控制区 -->
-        <div class="footer-controls">
-            <div id="syncStatus" class="sync-status"></div>
+        <footer class="footer-controls">
+            <div id="syncStatus" class="sync-status" aria-live="assertive"></div>
             <div class="action-buttons">
-                <button id="undoBtn" class="control-btn">⏪ 撤销</button>
-                <button id="logoutBtn" class="control-btn">🔒 退出登录</button>
+                <button id="undoBtn" 
+                        class="control-btn"
+                        aria-label="撤销上一步操作">
+                    ⏪ 撤销
+                </button>
+                <button id="logoutBtn" 
+                        class="control-btn logout"
+                        aria-label="退出登录">
+                    🔒 退出登录
+                </button>
             </div>
-        </div>
+        </footer>
+    </div>
+
+    <!-- 建议添加加载动画 -->
+    <div id="loading" style="display: none;">
+        加载中... <span class="spinner">⏳</span>
     </div>
 
     <script src="script.js" defer></script>
