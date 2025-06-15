@@ -1,156 +1,112 @@
+// file: script.js
 const MilkManager = (() => {
-    // 配置项
     const config = {
-        gist: {
-            token: localStorage.getItem('github_token'),
-            filename: 'milk-data.json',
-            gistId: localStorage.getItem('gistId'),
-            apiUrl: 'https://api.github.com/gists',
-            // 新增缓存清除参数
-            cacheBuster: true
+        containerId: '#milkManager',
+        elements: {
+            counter: '#milkCounter',
+            display: '#milkDisplay',
+            history: '#historyLog',
+            undoBtn: '#undoBtn'
         },
-        storageKey: 'milkData_sync_v2',
-        syncInterval: 3000 // 3秒检查一次更新
+        storageKey: 'milkData_v3'
     };
 
     let state = {
         stock: [],
-        history: [],
-        _version: Date.now() // 数据版本标识
+        history: []
     };
 
-    // DOM元素
-    const dom = {
-        display: document.getElementById('milkDisplay'),
-        counter: document.getElementById('milkCounter'),
-        history: document.getElementById('historyLog'),
-        status: document.getElementById('syncStatus')
-    };
+    const dom = {};
 
-    /* ========== 同步核心 ========== */
-    const forceSync = async () => {
-        const syncStart = Date.now();
-        try {
-            // 1. 准备同步数据
-            state._version = syncStart;
-            const syncData = {
-                ...state,
-                _sync: syncStart,
-                _device: 'web_' + navigator.userAgent.slice(0, 30)
-            };
-
-            // 2. 更新GitHub Gist
-            const url = config.gist.gistId ? 
-                `${config.gist.apiUrl}/${config.gist.gistId}` : 
-                config.gist.apiUrl;
-            
-            const response = await fetch(url + (config.gist.cacheBuster ? `?t=${syncStart}` : ''), {
-                method: config.gist.gistId ? 'PATCH' : 'POST',
-                headers: {
-                    'Authorization': `token ${config.gist.token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                body: JSON.stringify({
-                    description: `牛奶同步 @ ${new Date().toLocaleString()}`,
-                    public: false,
-                    files: {
-                        [config.gist.filename]: {
-                            content: JSON.stringify(syncData)
-                        }
-                    }
-                })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || '同步失败');
-
-            // 3. 处理新创建的Gist
-            if (!config.gist.gistId && data.id) {
-                config.gist.gistId = data.id;
-                localStorage.setItem('gistId', data.id);
-            }
-
-            showStatus(`✅ 同步成功 (${Date.now() - syncStart}ms)`);
-            return true;
-        } catch (error) {
-            console.error('强制同步失败:', error);
-            showStatus(`❌ 同步失败: ${error.message}`);
-            return false;
-        }
-    };
-
-    /* ========== 数据加载 ========== */
-    const loadWithRetry = async (attempt = 0) => {
-        try {
-            // 1. 尝试从GitHub加载
-            if (config.gist.token && config.gist.gistId) {
-                const response = await fetch(
-                    `${config.gist.apiUrl}/${config.gist.gistId}?t=${Date.now()}`,
-                    {
-                        headers: {
-                            'Authorization': `token ${config.gist.token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        },
-                        cache: 'no-store'
-                    }
-                );
-
-                if (response.ok) {
-                    const data = await response.json();
-                    const remoteData = JSON.parse(data.files[config.gist.filename].content);
-                    
-                    // 版本比较
-                    if (remoteData._version > (state._version || 0)) {
-                        state = remoteData;
-                        showStatus(`🔄 已加载v${remoteData._version}`);
-                        render();
-                        return true;
-                    }
-                    return false; // 无新版本
-                }
-            }
-
-            // 2. 降级到本地加载
-            const localData = localStorage.getItem(config.storageKey);
-            if (localData) {
-                state = JSON.parse(localData);
-                showStatus('⚠️ 使用本地数据');
-                render();
-            }
-        } catch (error) {
-            console.error(`数据加载尝试${attempt + 1}失败:`, error);
-            if (attempt < 2) {
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                return loadWithRetry(attempt + 1);
-            }
-            showStatus('❌ 加载失败');
-        }
-        return false;
-    };
-
-    /* ========== 定时同步 ========== */
-    let syncTimer;
-    const startSyncTimer = () => {
-        syncTimer = setInterval(async () => {
-            await loadWithRetry(); // 只检查更新不上传
-        }, config.syncInterval);
-    };
-
-    /* ========== 操作处理 ========== */
-    const handleAction = async (type, amount) => {
-        // 更新数据
-        if (type === 'add') {
-            state.stock.push(...Array(amount).fill('🥛'));
-        } else {
-            if (amount > state.stock.length) {
-                alert('库存不足！');
-                return;
-            }
-            state.stock.splice(0, amount);
-        }
+    const init = () => {
+        console.log('🚀 系统启动...');
         
-        // 记录历史
+        try {
+            // 缓存DOM元素
+            dom.container = document.querySelector(config.containerId);
+            dom.counter = document.querySelector(config.elements.counter);
+            dom.display = document.querySelector(config.elements.display);
+            dom.history = document.querySelector(config.elements.history);
+            dom.undoBtn = document.querySelector(config.elements.undoBtn);
+
+            loadData();
+            bindEvents();
+            render();
+        } catch (error) {
+            showError('系统初始化失败，请刷新页面');
+            console.error('初始化错误:', error);
+        }
+    };
+
+    const loadData = () => {
+        try {
+            const saved = localStorage.getItem(config.storageKey);
+            if (saved) {
+                const data = JSON.parse(saved);
+                state.stock = data.stock || resetStock();
+                state.history = data.history || [];
+            } else {
+                resetSystem();
+            }
+        } catch (e) {
+            console.warn('加载数据失败，重置系统');
+            resetSystem();
+        }
+    };
+
+    const resetStock = () => Array(3).fill('🥛');
+    
+    const resetSystem = () => {
+        state = {
+            stock: resetStock(),
+            history: []
+        };
+    };
+
+    const bindEvents = () => {
+        dom.container.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+
+            if (btn.classList.contains('add-btn')) {
+                handleAdd(parseInt(btn.dataset.amount));
+            } else if (btn.classList.contains('remove-btn')) {
+                handleDrink(parseInt(btn.dataset.amount));
+            } else if (btn.id === 'undoBtn') {
+                undoAction();
+            }
+        });
+    };
+
+    const handleAdd = (amount) => {
+        state.stock.push(...Array(amount).fill('🥛'));
+        recordHistory('add', amount);
+        saveAndRender();
+    };
+
+    const handleDrink = (amount) => {
+        if (amount > state.stock.length) {
+            alert('🥛 库存不足！');
+            return;
+        }
+        state.stock.splice(0, amount);
+        recordHistory('drink', amount);
+        saveAndRender();
+    };
+
+    const undoAction = () => {
+        if (state.history.length === 0) return;
+
+        const last = state.history.pop();
+        if (last.type === 'add') {
+            state.stock.splice(-last.amount);
+        } else {
+            state.stock.unshift(...Array(last.amount).fill('🥛'));
+        }
+        saveAndRender();
+    };
+
+    const recordHistory = (type, amount) => {
         state.history.push({
             type,
             amount,
@@ -164,29 +120,65 @@ const MilkManager = (() => {
                 second: '2-digit'
             })
         });
-
-        // 立即同步
-        render();
-        await forceSync();
     };
 
-    // ...（render等其他方法保持不变）...
+    const saveAndRender = () => {
+        saveData();
+        render();
+    };
 
-    /* ========== 初始化 ========== */
-    const init = async () => {
-        await loadWithRetry();
-        bindEvents();
-        startSyncTimer();
-        showStatus('系统就绪');
+    const render = () => {
+        // 更新计数器
+        dom.counter.innerHTML = `🥛 当前余量：${state.stock.length}包 ${
+            state.stock.length <= 3 ? '<span class="warning">（该补货了！）</span>' : ''
+        }`;
+
+        // 更新牛奶图标
+        dom.display.innerHTML = state.stock.map(() => 
+            '<div class="milk-item">🥛</div>'
+        ).join('');
+
+        // 更新历史记录（修改了这部分）
+        const recentHistory = state.history.slice(-5).reverse(); // 添加.reverse()反转数组
+        dom.history.innerHTML = `
+            <div class="history-title">📋 操作记录（最近5条）</div>
+            ${recentHistory.map(record => `
+                <div class="record-item ${record.type}">
+                    ${record.type === 'add' ? '🛒' : '🥤'}
+                    <span class="timestamp">${record.time}</span>
+                    <span class="${record.type}-text">
+                        ${record.type === 'add' ? '补货' : '喝掉'} ${record.amount} 包
+                    </span>
+                </div>
+            `).join('') || '<div class="empty">~ 暂无记录 ~</div>'}
+        `;
+
+        // 更新撤销按钮状态
+        dom.undoBtn.disabled = state.history.length === 0;
+    };
+
+    const saveData = () => {
+        try {
+            localStorage.setItem(config.storageKey, JSON.stringify({
+                stock: state.stock,
+                history: state.history.slice(-50)
+            }));
+        } catch (e) {
+            console.error('保存失败:', e);
+        }
+    };
+
+    const showError = (msg) => {
+        dom.container.innerHTML = `
+            <div class="error-box">
+                ❗ ${msg}
+                <button onclick="location.reload()">点击重试</button>
+            </div>
+        `;
     };
 
     return { init };
 })();
 
-// 启动应用
-document.addEventListener('DOMContentLoaded', () => {
-    MilkManager.init().catch(e => {
-        console.error('启动失败:', e);
-        alert('应用初始化失败，请检查控制台');
-    });
-});
+// 启动系统
+document.addEventListener('DOMContentLoaded', MilkManager.init);
